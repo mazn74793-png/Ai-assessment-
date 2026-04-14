@@ -32,8 +32,6 @@ export default function App() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const systemInstruction = "أنت 'Mazen AI Assistant'، مساعد ذكي طوره مازن لخدمة المستخدمين في تحليل البيانات البصرية. ردودك يجب أن تكون ذكية، سريعة، وتدعم اللغة العربية والإنجليزية بطلاقة. عرف نفسك دائماً في بداية المحادثة أو عند السؤال بأنك مساعد ذكي طوره مازن.";
-
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -91,6 +89,26 @@ export default function App() {
     setIsLoading(true);
 
     try {
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const timeStr = now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+
+      const dynamicSystemInstruction = `
+أنت 'Mazen AI Assistant'، مساعد ذكي متطور وشامل طوره مازن. 
+أنت تمتلك قدرات هائلة في تحليل البيانات البصرية والنصية، وتتميز بالذكاء الحاد والسرعة الفائقة.
+معلومات السياق الحالية:
+- اليوم والتاريخ: ${dateStr}
+- الوقت الحالي: ${timeStr}
+- المطور: مازن (Mazen)
+
+تعليماتك:
+1. عرف نفسك دائماً بأنك مساعد ذكي طوره مازن.
+2. كن دقيقاً، ذكياً، ومفيداً لأقصى درجة.
+3. أجب بطلاقة باللغتين العربية والإنجليزية حسب حاجة المستخدم.
+4. إذا سألك المستخدم عن الوقت أو التاريخ، فأنت تعرفهما بدقة من معلومات السياق أعلاه.
+5. في تحليل الصور، كن تفصيلياً وعميقاً في ملاحظاتك.
+`;
+
       const model = "gemini-3-flash-preview";
       
       let contents: any[] = [];
@@ -129,7 +147,7 @@ export default function App() {
         model,
         contents: [...history, ...contents],
         config: {
-          systemInstruction,
+          systemInstruction: dynamicSystemInstruction,
         }
       });
 
