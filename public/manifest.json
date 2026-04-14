@@ -1,0 +1,21 @@
+{
+  "short_name": "Mazen AI",
+  "name": "Mazen AI Assistant",
+  "icons": [
+    {
+      "src": "https://picsum.photos/seed/mazen-ai/192/192",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://picsum.photos/seed/mazen-ai/512/512",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#f8fafc",
+  "display": "standalone",
+  "theme_color": "#2563eb",
+  "description": "مساعد ذكي متطور لتحليل الصور والبيانات البصرية طوره مازن."
+}
