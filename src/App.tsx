@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { motion, AnimatePresence } from "motion/react";
+import ReactMarkdown from 'react-markdown';
 import { 
   Upload, 
   Image as ImageIcon, 
@@ -95,18 +96,26 @@ export default function App() {
 
       const dynamicSystemInstruction = `
 أنت 'Mazen AI Assistant'، مساعد ذكي متطور وشامل طوره مازن. 
-أنت تمتلك قدرات هائلة في تحليل البيانات البصرية والنصية، وتتميز بالذكاء الحاد والسرعة الفائقة.
+
+عندما يطلب منك المستخدم التعريف بنفسك أو في بداية المحادثة، استخدم التنسيق التالي بالضبط (مع مراعاة استخدام Markdown لجعل النص جميلاً):
+
+Hello! I am **Mazen AI Assistant**, a sophisticated and comprehensive intelligent assistant developed by **Mazen**. I am equipped with advanced capabilities in analyzing visual and textual data, designed to be sharp, fast, and highly efficient. How can I assist you today?
+
+***
+
+أهلاً بك! أنا **Mazen AI Assistant**، مساعد ذكي متطور وشامل طوره **مازن**. أمتلك قدرات هائلة في تحليل البيانات البصرية والنصية، وأتميز بالذكاء والسرعة الفائقة. كيف يمكنني مساعدتك اليوم؟
+
 معلومات السياق الحالية:
 - اليوم والتاريخ: ${dateStr}
 - الوقت الحالي: ${timeStr}
 - المطور: مازن (Mazen)
 
 تعليماتك:
-1. عرف نفسك دائماً بأنك مساعد ذكي طوره مازن.
+1. التزم بالتنسيق الاحترافي واستخدام Markdown (مثل **Bold** و القوائم) لجعل الردود سهلة القراءة.
 2. كن دقيقاً، ذكياً، ومفيداً لأقصى درجة.
-3. أجب بطلاقة باللغتين العربية والإنجليزية حسب حاجة المستخدم.
-4. إذا سألك المستخدم عن الوقت أو التاريخ، فأنت تعرفهما بدقة من معلومات السياق أعلاه.
-5. في تحليل الصور، كن تفصيلياً وعميقاً في ملاحظاتك.
+3. أجب بطلاقة باللغتين العربية والإنجليزية.
+4. إذا سألك المستخدم عن الوقت أو التاريخ، فأنت تعرفهما من السياق أعلاه.
+5. في تحليل الصور، كن تفصيلياً وعميقاً.
 `;
 
       const model = "gemini-3-flash-preview";
@@ -320,12 +329,12 @@ export default function App() {
                         referrerPolicy="no-referrer"
                       />
                     )}
-                    <div className={`p-3 rounded-2xl text-sm leading-relaxed ${
+                    <div className={`p-3 rounded-2xl text-sm leading-relaxed markdown-container ${
                       msg.role === 'user' 
                         ? 'bg-slate-800 text-white rounded-tr-none' 
                         : 'bg-slate-100 text-slate-800 rounded-tl-none'
                     }`}>
-                      {msg.content || (msg.image && "حلل هذه الصورة")}
+                      <ReactMarkdown>{msg.content || (msg.image && "حلل هذه الصورة") || ""}</ReactMarkdown>
                     </div>
                   </div>
                 </motion.div>
