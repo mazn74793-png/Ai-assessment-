@@ -1,0 +1,6 @@
+{
+  "name": "Mazen AI Assistant",
+  "description": "A sophisticated AI assistant developed by Mazen for visual data analysis and image-based Q&A using Gemini 1.5 Flash.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
