@@ -21,8 +21,9 @@ import {
   RefreshCw
 } from 'lucide-react';
 
-// Initialize Gemini
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+// Handle API Key for different environments (AI Studio uses process.env, Vercel/Vite use import.meta.env)
+const API_KEY = (import.meta as any).env?.VITE_GEMINI_API_KEY || (process.env as any).GEMINI_API_KEY || "";
+const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 interface Message {
   role: 'user' | 'assistant';
@@ -38,6 +39,12 @@ export default function App() {
   const [isDragging, setIsDragging] = useState(false);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [isSpeaking, setIsSpeaking] = useState<number | null>(null);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('mazen_theme') === 'dark';
+    }
+    return false;
+  });
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -59,6 +66,17 @@ export default function App() {
       localStorage.setItem('mazen_chat_history', JSON.stringify(messages));
     }
   }, [messages]);
+
+  // Handle Theme
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('mazen_theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('mazen_theme', 'light');
+    }
+  }, [isDarkMode]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -136,6 +154,14 @@ export default function App() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if ((!input.trim() && !image) || isLoading) return;
+
+    if (!API_KEY) {
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: "🚨 **تنبيه**: يبدو أن مفتاح الـ API غير مضبوط بشكل صحيح. إذا كنت تستخدم Vercel، تأكد من إضافة المتغير `VITE_GEMINI_API_KEY` في الإعدادات."
+      }]);
+      return;
+    }
 
     const userMessage: Message = {
       role: 'user',
@@ -236,24 +262,33 @@ Hello! I am **Mazen AI Assistant**, a sophisticated and comprehensive intelligen
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
+    <div className={`min-h-screen flex flex-col transition-colors duration-300 ${isDarkMode ? 'bg-slate-900 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
+      <header className={`border-b transition-colors duration-300 sticky top-0 z-10 ${isDarkMode ? 'bg-slate-800/80 backdrop-blur-md border-slate-700' : 'bg-white/80 backdrop-blur-md border-slate-200'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-400/30 animate-pulse-subtle">
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30 animate-pulse-subtle">
               <Sparkles size={24} />
             </div>
             <div>
-              <h1 className="text-xl font-display font-bold text-slate-900 tracking-tight">Mazen AI Assistant</h1>
+              <h1 className="text-xl font-display font-bold tracking-tight">Mazen AI Assistant</h1>
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Online • Mazen Intel</p>
               </div>
             </div>
           </div>
-          <div className="hidden sm:flex items-center gap-4">
-            <span className="px-3 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[10px] font-bold rounded-full shadow-sm">Mazen Intelligence v2.5</span>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className={`p-2 rounded-xl transition-all ${isDarkMode ? 'bg-slate-700 text-yellow-400 hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+              title={isDarkMode ? 'الوضع النهاري' : 'الوضع الليلي'}
+            >
+              {isDarkMode ? <RefreshCw size={20} className="rotate-180" /> : <Sparkles size={20} />}
+            </button>
+            <div className="hidden sm:flex items-center gap-4">
+              <span className="px-3 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[10px] font-bold rounded-full shadow-sm">Mazen Intelligence v2.5</span>
+            </div>
           </div>
         </div>
       </header>
@@ -262,16 +297,16 @@ Hello! I am **Mazen AI Assistant**, a sophisticated and comprehensive intelligen
       <main className="flex-1 max-w-4xl mx-auto w-full p-4 sm:p-6 flex flex-col">
         
         {/* Chat Interface */}
-        <div className="flex-1 flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden min-h-[500px]">
-          <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+        <div className={`flex-1 flex flex-col rounded-2xl border shadow-sm overflow-hidden transition-colors duration-300 min-h-[500px] ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+          <div className={`p-4 border-b flex items-center justify-between transition-colors duration-300 ${isDarkMode ? 'border-slate-700 bg-slate-800/50' : 'border-slate-100 bg-slate-50/50'}`}>
             <div className="flex items-center gap-2">
               <MessageSquare size={20} className="text-blue-600" />
-              <span className="font-semibold text-slate-800">محادثة المساعد</span>
+              <span className="font-semibold">محادثة المساعد</span>
             </div>
             {messages.length > 0 && (
               <button 
                 onClick={clearChat}
-                className="text-xs text-red-400 hover:text-red-500 hover:bg-red-50 px-2 py-1 rounded-lg transition-all flex items-center gap-1 font-medium"
+                className="text-xs text-red-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 px-2 py-1 rounded-lg transition-all flex items-center gap-1 font-medium"
               >
                 <Trash2 size={14} />
                 مسح السجل
@@ -282,10 +317,10 @@ Hello! I am **Mazen AI Assistant**, a sophisticated and comprehensive intelligen
           <div className="flex-1 overflow-y-auto p-4 space-y-6">
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-8">
-                <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4 text-blue-600">
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors ${isDarkMode ? 'bg-slate-700 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>
                   <Bot size={32} />
                 </div>
-                <h3 className="text-xl font-display font-bold text-slate-800">أهلاً بك في Mazen AI</h3>
+                <h3 className="text-xl font-display font-bold">أهلاً بك في Mazen AI</h3>
                 <p className="text-slate-500 text-sm mt-2 max-w-sm">
                   أنا مساعدك الذكي المطور بواسطة مازن. يمكنني مساعدتك في الكتابة، التحليل، أو شرح الصور بذكاء خارق.
                 </p>
@@ -300,7 +335,11 @@ Hello! I am **Mazen AI Assistant**, a sophisticated and comprehensive intelligen
                     <button 
                       key={i}
                       onClick={() => setInput(suggestion)}
-                      className="p-3 bg-white border border-slate-200 rounded-2xl text-xs text-slate-600 hover:border-blue-300 hover:bg-blue-50/30 text-right transition-all flex items-center justify-between group"
+                      className={`p-3 border rounded-2xl text-xs transition-all flex items-center justify-between group ${
+                        isDarkMode 
+                        ? 'bg-slate-700 border-slate-600 text-slate-300 hover:border-blue-500 hover:bg-slate-600' 
+                        : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300 hover:bg-blue-50/30'
+                      }`}
                     >
                       <ChevronRight size={14} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
                       <span>{suggestion}</span>
@@ -317,7 +356,7 @@ Hello! I am **Mazen AI Assistant**, a sophisticated and comprehensive intelligen
                   className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
                 >
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm ${
-                    msg.role === 'user' ? 'bg-slate-800 text-white' : 'bg-blue-600 text-white'
+                    msg.role === 'user' ? 'bg-slate-700 text-white' : 'bg-blue-600 text-white'
                   }`}>
                     {msg.role === 'user' ? <User size={16} /> : <Bot size={16} />}
                   </div>
@@ -326,7 +365,7 @@ Hello! I am **Mazen AI Assistant**, a sophisticated and comprehensive intelligen
                       <img 
                         src={msg.image} 
                         alt="Uploaded" 
-                        className="rounded-xl max-h-48 shadow-md border border-slate-200 mb-1"
+                        className="rounded-xl max-h-48 shadow-md border border-slate-700/10 mb-1"
                         referrerPolicy="no-referrer"
                       />
                     )}
@@ -334,7 +373,9 @@ Hello! I am **Mazen AI Assistant**, a sophisticated and comprehensive intelligen
                       <div className={`p-4 rounded-2xl text-[13px] leading-relaxed markdown-container shadow-sm ${
                         msg.role === 'user' 
                           ? 'bg-blue-600 text-white rounded-tr-none' 
-                          : 'bg-slate-100 text-slate-800 rounded-tl-none text-right border border-slate-200'
+                          : isDarkMode 
+                            ? 'bg-slate-700 text-slate-100 rounded-tl-none text-right border border-slate-600'
+                            : 'bg-slate-100 text-slate-800 rounded-tl-none text-right border border-slate-200'
                       }`}>
                         <ReactMarkdown>{msg.content || (msg.image && "حلل هذه الصورة") || ""}</ReactMarkdown>
                       </div>
@@ -343,14 +384,14 @@ Hello! I am **Mazen AI Assistant**, a sophisticated and comprehensive intelligen
                         <div className="flex items-center gap-1 mt-1 opacity-0 group-hover/msg:opacity-100 transition-opacity">
                           <button 
                             onClick={() => copyToClipboard(msg.content, idx)}
-                            className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-blue-500 transition-colors"
+                            className="p-1.5 hover:bg-slate-700/50 rounded-lg text-slate-400 hover:text-blue-500 transition-colors"
                             title="نسخ"
                           >
                             {copiedIdx === idx ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
                           </button>
                           <button 
                             onClick={() => speak(msg.content, idx)}
-                            className={`p-1.5 hover:bg-slate-100 rounded-lg transition-colors ${isSpeaking === idx ? 'text-blue-500 bg-blue-50' : 'text-slate-400 hover:text-blue-500'}`}
+                            className={`p-1.5 hover:bg-slate-700/50 rounded-lg transition-colors ${isSpeaking === idx ? 'text-blue-500 bg-blue-500/10' : 'text-slate-400 hover:text-blue-500'}`}
                             title="قراءة النص"
                           >
                             {isSpeaking === idx ? <VolumeX size={14} /> : <Volume2 size={14} />}
@@ -367,9 +408,9 @@ Hello! I am **Mazen AI Assistant**, a sophisticated and comprehensive intelligen
                 <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 animate-pulse">
                   <Bot size={16} />
                 </div>
-                <div className="bg-slate-100 p-3 rounded-2xl rounded-tl-none flex items-center gap-2">
+                <div className={`p-3 rounded-2xl rounded-tl-none flex items-center gap-2 ${isDarkMode ? 'bg-slate-700' : 'bg-slate-100'}`}>
                   <Loader2 size={16} className="animate-spin text-blue-600" />
-                  <span className="text-xs text-slate-500 font-medium">جاري التفكير...</span>
+                  <span className="text-xs font-medium">جاري التفكير...</span>
                 </div>
               </div>
             )}
@@ -377,7 +418,7 @@ Hello! I am **Mazen AI Assistant**, a sophisticated and comprehensive intelligen
           </div>
 
           {/* Chat Bar with Image Support */}
-          <div className="p-4 border-t border-slate-100 bg-white shadow-inner">
+          <div className={`p-4 border-t transition-colors duration-300 ${isDarkMode ? 'bg-slate-800 border-slate-700 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.3)]' : 'bg-white border-slate-100 shadow-inner'}`}>
             <AnimatePresence>
               {image && (
                 <motion.div 
@@ -386,7 +427,7 @@ Hello! I am **Mazen AI Assistant**, a sophisticated and comprehensive intelligen
                   exit={{ height: 0, opacity: 0 }}
                   className="mb-3 relative inline-block group"
                 >
-                  <div className="p-1 bg-slate-100 border border-slate-200 rounded-xl">
+                  <div className={`p-1 border rounded-xl ${isDarkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-100 border-slate-200'}`}>
                     <img 
                       src={image} 
                       alt="Preview" 
@@ -417,14 +458,16 @@ Hello! I am **Mazen AI Assistant**, a sophisticated and comprehensive intelligen
                     }
                   }}
                   placeholder="اكتب رسالتك هنا..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none max-h-32"
+                  className={`w-full border rounded-2xl py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none max-h-32 ${
+                    isDarkMode ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                  }`}
                   disabled={isLoading}
                 />
                 <div className="absolute left-2 bottom-2 flex items-center gap-1">
                   <button 
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                    className={`p-2 rounded-xl transition-all ${isDarkMode ? 'text-slate-400 hover:text-blue-400 hover:bg-slate-600' : 'text-slate-400 hover:text-blue-600 hover:bg-blue-50'}`}
                     title="إرفاق صورة"
                   >
                     <ImageIcon size={20} />
@@ -442,12 +485,12 @@ Hello! I am **Mazen AI Assistant**, a sophisticated and comprehensive intelligen
               <button 
                 type="submit"
                 disabled={isLoading || (!input.trim() && !image)}
-                className="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-200 shrink-0"
+                className="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center hover:bg-blue-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-500/20 shrink-0"
               >
                 {isLoading ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
               </button>
             </form>
-            <p className="text-[10px] text-slate-400 mt-2 text-center font-medium">
+            <p className="text-[10px] text-slate-500 mt-2 text-center font-medium">
               © 2026 Mazen AI Assistant • Powered by Mazen
             </p>
           </div>
@@ -455,12 +498,12 @@ Hello! I am **Mazen AI Assistant**, a sophisticated and comprehensive intelligen
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 py-6">
+      <footer className={`border-t py-6 transition-colors duration-300 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <p className="text-slate-500 text-sm font-medium">
-            Developed by <span className="text-blue-600 font-bold">Mazen</span>
+          <p className="text-sm font-medium">
+            Developed by <span className="text-blue-600 font-extrabold">Mazen</span>
           </p>
-          <p className="text-slate-400 text-[10px] mt-1 uppercase tracking-widest">
+          <p className="text-slate-500 text-[10px] mt-1 uppercase tracking-widest font-bold">
             © 2026 Mazen AI Assistant • Powered by Mazen
           </p>
         </div>
